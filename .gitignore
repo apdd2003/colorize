@@ -150,6 +150,11 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# custom
+colorization_release_v2-9b330a0b.pth
+*.png
+*.jpg
+*.jpeg
 # Cython debug symbols
 cython_debug/
 
