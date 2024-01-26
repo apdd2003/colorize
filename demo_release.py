@@ -53,6 +53,9 @@ def upload_image():
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         image = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        is_grayscale = image.getcolors()
+        if not is_grayscale:
+            return jsonify({"message":"Only grayscale images are allowed"}),400
         image.thumbnail((256,256))
         image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         # print('upload_image filename: ' + filename)
