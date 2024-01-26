@@ -1,6 +1,7 @@
 import argparse
 import matplotlib.pyplot as plt
 from PIL import Image
+import base64
 
 from colorizers import *
 
@@ -8,7 +9,7 @@ from colorizers import *
 import os
 from app import app
 # import urllib.request
-from flask import flash, request, redirect, url_for, render_template
+from flask import flash, request, redirect, url_for, render_template, jsonify, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -31,16 +32,18 @@ def add_header(response):
     return response
 
 
-@app.route('/')
-def upload_form():
-    return render_template('upload.html')
+# @app.route('/')
+# def upload_form():
+#     return render_template('upload.html')
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/api', methods=[ 'POST'])
 def upload_image():
-    if 'file' not in request.files:
+    if  False and 'file' not in request.files:
+        print("Not in files>>>>>>>")
         flash('No file part')
         return redirect(request.url)
+    print(request)
     file = request.files['file']
 
     if file.filename == '':
@@ -53,11 +56,13 @@ def upload_image():
         image.thumbnail((256,256))
         image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         # print('upload_image filename: ' + filename)
-        flash('Image successfully uploaded and displayed below')
-        return render_template('upload.html', filename=filename)
+        # flash('Image successfully uploaded and displayed below')
+        # return render_template('upload.html', filename=filename)
+        return jsonify({"message":"file uploaded"})
     else:
         flash('Allowed image types are -> png, jpg, jpeg, gif')
-        return redirect(request.url)
+        # return redirect(request.url)
+        return jsonify({"message":"Allowed image types are -> png, jpg, jpeg, gif"}),400
 
 
 @app.route('/display/<filename>')
@@ -66,7 +71,7 @@ def display_image(filename):
     return redirect(url_for('static', filename='uploads/' + filename), code=301)
 
 
-@app.route('/color_output/<filename>')
+@app.route('/api/color_output/<filename>')
 def color_output(filename):
     print(filename)
     parser = argparse.ArgumentParser()
@@ -103,6 +108,17 @@ def color_output(filename):
     # plt.imsave('%s_siggraph17.png' % opt.save_prefix, out_img_siggraph17)
     print('trying to save file...')
     plt.imsave('static/imgs_out/output.png', out_img_eccv16)
+    
+    with open('static/imgs_out/output.png', "rb") as image_file:
+        # Read the binary data of the image file
+        image_binary_data = image_file.read()
+        
+        # Encode the binary data to base64
+        base64_encoded = base64.b64encode(image_binary_data)
+        
+        # Decode the base64 bytes to a string (optional)
+        base64_string = base64_encoded.decode('utf-8')
+
     # plt.imsave('imgs_out/' +filename, out_img_siggraph17)
 
     # plt.figure(figsize=(12, 8))
@@ -128,9 +144,19 @@ def color_output(filename):
     # plt.show()
 
     # print('display_image filename: ' + filename)
-    return render_template('output.html', filename=filename)
+    # return render_template('output.html', filename=filename)
+    return jsonify({"data":base64_string})
 
+@app.route('/', defaults={'path': ''})
+@app.route("/<string:path>")
+@app.route('/<path:path>')
+def catch_all(path):
 
+    # current_current_app.logger.info('path==', path)
+
+    # return send_from_directory(current_app.static_folder, "index.html")
+    print(current_app.static_folder+'/index.html')
+    return current_app.send_static_file('index.html')
 # #############################
 
 
